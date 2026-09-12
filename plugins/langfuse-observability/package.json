@@ -1,0 +1,12 @@
+{
+  "name": "zcode-langfuse-observability",
+  "version": "0.1.1",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "langfuse": "3.38.20"
+  }
+}
