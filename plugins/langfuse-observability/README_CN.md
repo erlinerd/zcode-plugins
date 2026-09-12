@@ -50,7 +50,7 @@ Langfuse endpoint 发送观测数据，只写入有大小限制的本地会话�
 ## 文件与依赖
 
 进程 Hook 声明在 [`hooks/hooks.json`](./hooks/hooks.json)，运行
-`dist/hooks/entry.mjs` 中的 bundle。运行时已包含官方 `langfuse`
+`payload/dist/hooks/entry.mjs` 中的 bundle。运行时已包含官方 `langfuse`
 JavaScript SDK，不需要额外安装运行时依赖。
 
 ## 来源与许可证

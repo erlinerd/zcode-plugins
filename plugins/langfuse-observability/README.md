@@ -53,7 +53,7 @@ local session state. Never commit credentials or private Hook payloads.
 ## Files and dependencies
 
 The process Hook is declared in [`hooks/hooks.json`](./hooks/hooks.json) and
-runs the bundled runtime at `dist/hooks/entry.mjs`. The runtime bundles the
+runs the bundled runtime at `payload/dist/hooks/entry.mjs`. The runtime bundles the
 official `langfuse` JavaScript SDK. No runtime installation step is required.
 
 ## Source and license
