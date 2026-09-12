@@ -15,7 +15,15 @@ files and never collects hidden chain-of-thought.
 
 Missing credentials, malformed Hook input, local-state errors, and Langfuse
 errors are fail-open and must not block ZCode. Session state is stored under
-`ZCODE_PLUGIN_DATA` when available and is cleaned up after a completed `Stop`.
+`ZCODE_PLUGIN_DATA` when available, otherwise under the ZCode plugin data
+fallback, and is cleaned up after a completed `Stop`.
+
+Each of the six events starts a `node` process with the current user's
+permissions. The process reads one JSON Hook event from stdin and writes one
+empty JSON object to stdout; it does not spawn a shell or run user commands.
+It reads `ZCODE_CONFIG_PATH`, or `~/.zcode/cli/config.json` when unset, to find
+persisted options, writes only bounded hashed JSON session state, and sends
+HTTPS requests to the configured Langfuse ingestion endpoint at `Stop`.
 
 ## Privacy and configuration
 
@@ -46,19 +54,26 @@ LANGFUSE_MAX_CAPTURE_CHARS
 LANGFUSE_DEBUG
 ```
 
-`LANGFUSE_BASE_URL` defaults to `https://cloud.langfuse.com`. The plugin sends
-telemetry only to that configured Langfuse endpoint and writes only its bounded
-local session state. Never commit credentials or private Hook payloads.
+`LANGFUSE_BASE_URL` defaults to `https://cloud.langfuse.com`. It must be an
+HTTPS URL; plaintext HTTP is rejected and replaced with the default HTTPS
+endpoint. The plugin sends telemetry only to that configured Langfuse endpoint
+and writes only its bounded local session state. Never commit credentials or
+private Hook payloads.
 
 ## Files and dependencies
 
 The process Hook is declared in [`hooks/hooks.json`](./hooks/hooks.json) and
-runs the bundled runtime at `payload/dist/hooks/entry.mjs`. The runtime bundles the
-official `langfuse` JavaScript SDK. No runtime installation step is required.
+runs the reviewable source runtime at `hooks/entry.mjs`. When the optional
+`langfuse` dependency is installed during local development, the runtime uses
+the official JavaScript SDK. The published official cache is self-contained and
+falls back to the same Langfuse HTTPS ingestion API through Node's built-in
+`fetch`, so no install step is required.
 
 ## Source and license
 
 Source repository: <https://github.com/erlinerd/zcode-langfuse-plugin>
 
-Licensed under MIT. See the source repository for architecture, tests, release
-checks, and the complete development history.
+Licensed under MIT. See [`THIRD_PARTY_NOTICES.md`](./THIRD_PARTY_NOTICES.md)
+for the exact Langfuse SDK, Langfuse Core, and Mustache versions and their MIT
+licenses. See the source repository for architecture, tests, release checks,
+and the complete development history.

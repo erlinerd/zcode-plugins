@@ -13,8 +13,14 @@ generation。
 ZCode Hook stdin 传入的字段，不读取 transcript 文件，也不采集隐藏完整思维链。
 
 缺少凭据、Hook 输入损坏、本地状态错误和 Langfuse 错误都采用 fail-open，
-不能阻塞 ZCode。可用时，会在 `ZCODE_PLUGIN_DATA` 下保存会话状态，并在
-完成 `Stop` 后清理。
+不能阻塞 ZCode。可用时，会在 `ZCODE_PLUGIN_DATA` 下保存会话状态，否则使用
+ZCode 插件数据回退路径，并在完成 `Stop` 后清理。
+
+六个事件都会以当前用户权限启动一个 `node` process Hook。Hook 从 stdin
+读取一个 JSON 事件，并向 stdout 写入一个空 JSON 对象；不会启动 shell，也不会
+执行用户命令。Hook 会读取 `ZCODE_CONFIG_PATH`；未设置时读取
+`~/.zcode/cli/config.json` 中保存的插件选项，只写入有界、哈希化的 JSON 会话
+状态，并在 `Stop` 时向配置的 Langfuse HTTPS 接口发送请求。
 
 ## 隐私与配置
 
@@ -43,18 +49,21 @@ LANGFUSE_MAX_CAPTURE_CHARS
 LANGFUSE_DEBUG
 ```
 
-`LANGFUSE_BASE_URL` 默认是 `https://cloud.langfuse.com`。插件只向配置的
-Langfuse endpoint 发送观测数据，只写入有大小限制的本地会话状态。不要提交
-凭据或私有 Hook payload。
+`LANGFUSE_BASE_URL` 默认是 `https://cloud.langfuse.com`，必须使用 HTTPS；明文
+HTTP 会被拒绝并回退到默认 HTTPS 地址。插件只向配置的 Langfuse endpoint 发送
+观测数据，只写入有大小限制的本地会话状态。不要提交凭据或私有 Hook payload。
 
 ## 文件与依赖
 
-进程 Hook 声明在 [`hooks/hooks.json`](./hooks/hooks.json)，运行
-`payload/dist/hooks/entry.mjs` 中的 bundle。运行时已包含官方 `langfuse`
-JavaScript SDK，不需要额外安装运行时依赖。
+进程 Hook 声明在 [`hooks/hooks.json`](./hooks/hooks.json)，运行可审查的源代码
+`hooks/entry.mjs`。本地开发安装可选的 `langfuse` 依赖时会使用官方 JavaScript
+SDK；官方缓存中的插件使用 Node 内置 `fetch` 调用相同的 Langfuse HTTPS ingestion
+API，因此不需要运行时安装步骤。
 
 ## 来源与许可证
 
 源码仓库：<https://github.com/erlinerd/zcode-langfuse-plugin>
 
-本插件采用 MIT 许可证。架构、测试、发布检查和完整开发历史见源码仓库。
+本插件采用 MIT 许可证。确切的 Langfuse SDK、Langfuse Core 和 Mustache 版本及
+MIT 许可证见 [`THIRD_PARTY_NOTICES.md`](./THIRD_PARTY_NOTICES.md)。架构、测试、
+发布检查和完整开发历史见源码仓库。
