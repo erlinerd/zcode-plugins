@@ -135,20 +135,19 @@ npm run check
 npm run package:plugin
 ```
 
-`npm run build` creates the local `dist/` bundle. `npm run package:plugin` is the
-default distribution build: it runs the bundle build once, validates it, and
-creates both the ignored release files and the catalog-ready plugin layout:
+`npm run build` builds the complete `dist/` output, structured as a ZCode
+marketplace root (per the official catalog layout):
 
 ```text
-artifacts/plugin.zip
-artifacts/plugin.zip.sha256
-artifacts/plugin-layout/plugins/zcode-plugin-langfuse/
-artifacts/plugin-layout/marketplace-entry.json
+dist/marketplace.json
+dist/plugins/zcode-plugin-langfuse/
 ```
 
-The ZIP and plugin layout use the same generated bundle. The ZIP contains the
-ZCode manifest, Hook declaration, bundled SDK, and third-party notices. Neither
-`dist/` nor `artifacts/` is committed.
+`dist/plugins/zcode-plugin-langfuse/` is the installable plugin: its
+`dist/hooks/entry.mjs` runtime, manifest, hooks, package metadata, dual-language
+README, license, and third-party notices. The release workflow compresses the
+tree into the versioned ZIP; the official catalog and local directory installs
+consume the tree as-is. Everything under `dist/` is generated and not committed.
 
 The hook can be smoke-tested without credentials:
 
@@ -187,17 +186,18 @@ it, and configure its `userConfig` values.
 The plugin manifest is at `.zcode-plugin/plugin.json`; the hook declaration is
 at `hooks/hooks.json`.
 
-## Online ZCode marketplace
+## Install a release
 
-Add this repository in **Settings → Plugins → Create → Add marketplace** using
-its GitHub repository URL. ZCode accepts a GitHub repository or its URL as a
-marketplace source.
+Download `zcode-plugin-langfuse-v<version>.zip` from the release page, extract it, and add
+the extracted plugin directory as a local marketplace via **Settings →
+Plugins → Add marketplace**. Do not add a fresh checkout of this repository as
+a marketplace: it has no `dist/` bundle (generated, not committed), so hooks
+cannot start. For a development install from a checkout, run `npm install`
+first — the `prepare` hook builds `dist/`.
 
-- Community marketplace repository: <https://github.com/erlinerd/zcode-plugin-langfuse>
 - Marketplace manifest: <https://raw.githubusercontent.com/erlinerd/zcode-plugin-langfuse/main/marketplace.json>
 - Plugin manifest: <https://raw.githubusercontent.com/erlinerd/zcode-plugin-langfuse/main/.zcode-plugin/plugin.json>
-- Latest plugin ZIP: <https://github.com/erlinerd/zcode-plugin-langfuse/releases/latest/download/plugin.zip>
-- Latest ZIP checksum: <https://github.com/erlinerd/zcode-plugin-langfuse/releases/latest/download/plugin.zip.sha256>
+- Latest release (asset: `zcode-plugin-langfuse-v<version>.zip`): <https://github.com/erlinerd/zcode-plugin-langfuse/releases/latest>
 - Release page: <https://github.com/erlinerd/zcode-plugin-langfuse/releases/latest>
 - Official ZCode plugin documentation: <https://zcode.z.ai/en/docs/plugin>
 - Official ZCode plugin marketplace: <https://github.com/zai-org/zcode-plugins>
