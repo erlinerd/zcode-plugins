@@ -1,43 +1,87 @@
 # Langfuse Observability for ZCode
 
-[中文文档](./README_CN.md)
+[English](README.md) · [简体中文](README.zh-CN.md)
 
-A fail-open ZCode plugin that sends one Langfuse trace named `ZCode Turn` for
-each completed turn. Tool calls are spans and the assistant response is a
-generation.
+A community ZCode plugin that sends one Langfuse trace per completed ZCode turn.
+It is designed for review and possible inclusion in the ZCode official plugin
+marketplace.
 
-## Behavior
+> **Status:** early community contribution (`0.1.1`). The plugin is fail-open:
+> a missing credential, malformed hook payload, local state error, or Langfuse
+> request error must never block a ZCode session.
 
-The plugin listens to `SessionStart`, `UserPromptSubmit`, `PreToolUse`,
-`PostToolUse`, `PostToolUseFailure`, and `Stop`. It publishes only at `Stop`.
-It reads only fields delivered on ZCode Hook stdin. It never reads transcript
-files and never collects hidden chain-of-thought.
+## What it records
 
-Missing credentials, malformed Hook input, local-state errors, and Langfuse
-errors are fail-open and must not block ZCode. Session state is stored under
-`ZCODE_PLUGIN_DATA` when available, otherwise under the ZCode plugin data
-fallback, and is cleaned up after a completed `Stop`.
+The plugin listens to ZCode's process-hook events:
+
+- `SessionStart`
+- `UserPromptSubmit`
+- `PreToolUse`
+- `PostToolUse`
+- `PostToolUseFailure`
+- `Stop`
+
+At `Stop`, it emits a trace named `ZCode Turn` containing:
+
+- the ZCode session ID;
+- the user prompt and final assistant message, when prompt capture is enabled;
+- tool calls as Langfuse spans, including names and optional input/output;
+- an assistant response generation;
+- release, environment, turn ID, and tool-count metadata.
+
+It does **not** read the transcript file or collect hidden chain-of-thought. It
+only uses fields delivered in the ZCode hook payload.
+
+## Permissions and side effects
 
 Each of the six events starts a `node` process with the current user's
 permissions. The process reads one JSON Hook event from stdin and writes one
 empty JSON object to stdout; it does not spawn a shell or run user commands.
-It reads `ZCODE_CONFIG_PATH`, or `~/.zcode/cli/config.json` when unset, to find
-persisted options, writes only bounded hashed JSON session state, and sends
-HTTPS requests to the configured Langfuse ingestion endpoint at `Stop`.
 
-## Privacy and configuration
+The hook reads `ZCODE_CONFIG_PATH`, or
+`~/.zcode/cli/config.json` when that variable is unset, to find persisted plugin
+options. It writes only bounded, hashed JSON session state under
+`ZCODE_PLUGIN_DATA`, or the ZCode plugin data directory fallback. At `Stop`,
+it sends HTTPS requests to the configured Langfuse ingestion endpoint using the
+local credentials. No transcript files or hidden reasoning are read.
 
-Content capture is bounded and controlled independently for prompts, tool input,
-and tool output. Set these environment variables to disable content capture:
+## Architecture
 
 ```text
-LANGFUSE_CAPTURE_PROMPTS=false
-LANGFUSE_CAPTURE_TOOL_INPUTS=false
-LANGFUSE_CAPTURE_TOOL_OUTPUTS=false
+ZCode hook stdin
+      │ one JSON object
+      ▼
+ hooks/entry.mjs ──► TurnTracker ──► JsonStateStore
+                         │                  │
+                         │                  └─ per-session, atomic, hashed filename
+                         ▼
+                  LangfuseTraceSink ──► bundled official `langfuse` SDK
+                                              │
+                                              ▼
+                                      Langfuse ingestion API
 ```
 
-Configuration precedence is process environment, persisted ZCode plugin options,
-then defaults. Supported configuration includes:
+The source is deliberately split into deep modules:
+
+- `src/domain/` — hook and trace data types plus payload extraction;
+- `src/application/` — configuration and the turn state machine;
+- `src/adapters/` — the filesystem state adapter and Langfuse SDK adapter;
+- `src/hooks/` — the small process entry point and fail-open policy.
+
+The distributable `dist/hooks/entry.mjs` bundles the official JavaScript SDK, so
+an installed plugin does not need a separate `npm install` at runtime.
+
+## Configuration
+
+The plugin reads ZCode `userConfig` values using the standard ZCode environment
+mapping. For example, the manifest key `langfuse_public_key` becomes:
+
+```text
+ZCODE_USER_CONFIG_LANGFUSE_PUBLIC_KEY
+```
+
+The following ordinary environment variables are also accepted, which is useful
+for local smoke tests and managed deployments:
 
 ```text
 LANGFUSE_PUBLIC_KEY
@@ -54,26 +98,131 @@ LANGFUSE_MAX_CAPTURE_CHARS
 LANGFUSE_DEBUG
 ```
 
-`LANGFUSE_BASE_URL` defaults to `https://cloud.langfuse.com`. It must be an
-HTTPS URL; plaintext HTTP is rejected and replaced with the default HTTPS
-endpoint. The plugin sends telemetry only to that configured Langfuse endpoint
-and writes only its bounded local session state. Never commit credentials or
-private Hook payloads.
+`LANGFUSE_BASE_URL` defaults to `https://cloud.langfuse.com`. Set it to your
+self-hosted HTTPS URL, for example `https://langfuse.example.com`. Plain HTTP
+URLs are rejected and replaced with the default HTTPS endpoint.
 
-## Files and dependencies
+For a self-hosted project, configure the public and secret keys in the plugin
+configuration. The hook reads its own persisted `plugins.options` entry using
+`ZCODE_PLUGIN_ID`; this is needed because current ZCode runtimes do not inject
+all `userConfig` values into process-hook environment variables. Standard
+`LANGFUSE_*` environment variables override stored options. Never commit
+credentials or put them in `hooks/hooks.json`.
 
-The process Hook is declared in [`hooks/hooks.json`](./hooks/hooks.json) and
-runs the reviewable source runtime at `hooks/entry.mjs`. When the optional
-`langfuse` dependency is installed during local development, the runtime uses
-the official JavaScript SDK. The published official cache is self-contained and
-falls back to the same Langfuse HTTPS ingestion API through Node's built-in
-`fetch`, so no install step is required.
+### Privacy controls
 
-## Source and license
+All capture controls default to `true` for useful traces. Set any of these to
+`false` to keep the corresponding content out of both the Langfuse request and
+local per-session state:
 
-Source repository: <https://github.com/erlinerd/zcode-plugin-langfuse>
+```text
+LANGFUSE_CAPTURE_PROMPTS=false
+LANGFUSE_CAPTURE_TOOL_INPUTS=false
+LANGFUSE_CAPTURE_TOOL_OUTPUTS=false
+```
 
-Licensed under MIT. See [`THIRD_PARTY_NOTICES.md`](./THIRD_PARTY_NOTICES.md)
-for the exact Langfuse SDK, Langfuse Core, and Mustache versions and their MIT
-licenses. See the source repository for architecture, tests, release checks,
-and the complete development history.
+Every captured field is bounded by `LANGFUSE_MAX_CAPTURE_CHARS` (default
+`20000`). Metadata-only mode still reports timing/session/tool-count structure,
+but not prompt, response, tool input, tool output, or error text.
+
+## Development
+
+Requirements: Node.js 20 or newer.
+
+```bash
+npm ci
+npm run check
+npm run package:plugin
+```
+
+`npm run build` creates the local `dist/` bundle. `npm run package:plugin` is the
+default distribution build: it runs the bundle build once, validates it, and
+creates both the ignored release files and the catalog-ready plugin layout:
+
+```text
+artifacts/plugin.zip
+artifacts/plugin.zip.sha256
+artifacts/plugin-layout/plugins/zcode-plugin-langfuse/
+artifacts/plugin-layout/marketplace-entry.json
+```
+
+The ZIP and plugin layout use the same generated bundle. The ZIP contains the
+ZCode manifest, Hook declaration, bundled SDK, and third-party notices. Neither
+`dist/` nor `artifacts/` is committed.
+
+The hook can be smoke-tested without credentials:
+
+```bash
+printf '%s\n' '{"hook_event_name":"Stop","session_id":"smoke","last_assistant_message":"ok"}' \
+  | ZCODE_PLUGIN_DATA="$(mktemp -d)" \
+    LANGFUSE_DEBUG=true \
+    node dist/hooks/entry.mjs
+```
+
+Expected stdout is one empty hook result object:
+
+```json
+{}
+```
+
+Diagnostics, when enabled, go to stderr. They never contain keys or full
+prompts.
+
+## Third-party software
+
+The runtime uses `langfuse` 3.38.20, `langfuse-core` 3.38.20, and `mustache`
+4.2.0. Each dependency is MIT-licensed; see
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for versions, provenance, and
+source links. Langfuse is an external service selected by the user and is not
+bundled with credentials.
+
+## Local installation for testing
+
+ZCode treats a selected directory as a **plugin marketplace**, so this repository
+includes `marketplace.json` at its root. Build first, then use **Settings →
+Plugins → Add marketplace → Select directory** and choose this repository.
+Install `zcode-plugin-langfuse` from the resulting personal marketplace, enable
+it, and configure its `userConfig` values.
+
+The plugin manifest is at `.zcode-plugin/plugin.json`; the hook declaration is
+at `hooks/hooks.json`.
+
+## Online ZCode marketplace
+
+Add this repository in **Settings → Plugins → Create → Add marketplace** using
+its GitHub repository URL. ZCode accepts a GitHub repository or its URL as a
+marketplace source.
+
+- Community marketplace repository: <https://github.com/erlinerd/zcode-plugin-langfuse>
+- Marketplace manifest: <https://raw.githubusercontent.com/erlinerd/zcode-plugin-langfuse/main/marketplace.json>
+- Plugin manifest: <https://raw.githubusercontent.com/erlinerd/zcode-plugin-langfuse/main/.zcode-plugin/plugin.json>
+- Latest plugin ZIP: <https://github.com/erlinerd/zcode-plugin-langfuse/releases/latest/download/plugin.zip>
+- Latest ZIP checksum: <https://github.com/erlinerd/zcode-plugin-langfuse/releases/latest/download/plugin.zip.sha256>
+- Release page: <https://github.com/erlinerd/zcode-plugin-langfuse/releases/latest>
+- Official ZCode plugin documentation: <https://zcode.z.ai/en/docs/plugin>
+- Official ZCode plugin marketplace: <https://github.com/zai-org/zcode-plugins>
+
+The repository marketplace is named `zcode-plugin-langfuse`, and its
+`marketplace.json` resolves the plugin from `source: "."`. Versioned release
+assets are generated by the tagged GitHub Actions workflow.
+
+Before submitting a marketplace change, verify:
+
+1. `npm run check` passes;
+2. `npm run package:plugin` creates and validates the release ZIP;
+3. `hooks/hooks.json` contains no unsupported hook events;
+4. no credentials are present in the repository, package, or logs;
+5. disabling prompt/tool capture behaves as documented.
+
+## Project policies
+
+- [Agent instructions](AGENTS.md)
+- [Contributing](CONTRIBUTING.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Security policy](SECURITY.md)
+- [Release checklist](docs/releasing.md)
+- [Design notes](DESIGN.md)
+
+## License
+
+MIT. See [LICENSE](LICENSE).

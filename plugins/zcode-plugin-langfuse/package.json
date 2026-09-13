@@ -1,12 +1,11 @@
 {
   "name": "zcode-plugin-langfuse",
   "version": "0.2.0",
-  "private": true,
+  "description": "Fail-open Langfuse tracing for ZCode sessions, prompts, tool calls, and assistant responses.",
+  "license": "MIT",
   "type": "module",
+  "private": true,
   "engines": {
     "node": ">=20"
-  },
-  "dependencies": {
-    "langfuse": "3.38.20"
   }
 }

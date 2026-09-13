@@ -7,8 +7,7 @@
   },
   "version": "0.2.0",
   "author": {
-    "name": "erlinerd",
-    "url": "https://github.com/erlinerd"
+    "name": "Community contributor"
   },
   "license": "MIT",
   "keywords": [
@@ -80,7 +79,5 @@
       "type": "boolean",
       "default": false
     }
-  },
-  "homepage": "https://github.com/erlinerd/zcode-plugin-langfuse",
-  "repository": "https://github.com/erlinerd/zcode-plugin-langfuse"
+  }
 }
