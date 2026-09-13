@@ -1,11 +1,37 @@
 {
   "name": "zcode-plugin-langfuse",
   "version": "0.2.1",
-  "description": "Fail-open Langfuse tracing for ZCode sessions, prompts, tool calls, and assistant responses.",
+  "private": true,
+  "description": "A fail-open Langfuse observability plugin for ZCode.",
   "license": "MIT",
   "type": "module",
-  "private": true,
   "engines": {
     "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc --noEmit && node scripts/build.mjs",
+    "clean": "node scripts/clean.mjs",
+    "test": "vitest run",
+    "lint": "oxlint src test scripts",
+    "lint:fix": "oxlint --fix src test scripts",
+    "typecheck": "tsc --noEmit",
+    "validate": "node scripts/validate.mjs",
+    "validate:artifact": "node scripts/validate.mjs --artifact",
+    "sync:catalog": "node scripts/sync-catalog.mjs",
+    "package:plugin": "npm run build && npm run validate && npm run validate:artifact",
+    "check": "npm run lint && npm run typecheck && npm test && npm run validate",
+    "prepare": "husky && npm run build"
+  },
+  "dependencies": {
+    "langfuse": "^3.38.20"
+  },
+  "devDependencies": {
+    "@types/node": "^26.4.1",
+    "esbuild": "^0.28.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.5.1",
+    "oxlint": "^1.82.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.0"
   }
 }

@@ -98,13 +98,14 @@ ZCode 选择本地目录时会按“插件市场”读取，因此仓库根目�
 
 ## 在线 ZCode 插件市场
 
-在 **设置 → 插件 → 创建 → 添加插件市场** 中，使用 GitHub 仓库地址添加：
+从 Release 页下载 `zcode-plugin-langfuse-v<版本>.zip` 并解压，在 **设置 → 插件 → 添加插件市场 →
+选择目录** 中选择解压后的插件目录安装。不要把全新检出的源码仓库直接添加为市场：
+其中没有 `dist/` bundle（生成目录不入库），Hook 无法启动。开发安装请先在检出目录
+运行 `npm install`（`prepare` 钩子会构建 `dist/`），再选择该目录。
 
-- 社区市场仓库：<https://github.com/erlinerd/zcode-plugin-langfuse>
 - 市场清单：<https://raw.githubusercontent.com/erlinerd/zcode-plugin-langfuse/main/marketplace.json>
 - 插件清单：<https://raw.githubusercontent.com/erlinerd/zcode-plugin-langfuse/main/.zcode-plugin/plugin.json>
-- 最新插件 ZIP：<https://github.com/erlinerd/zcode-plugin-langfuse/releases/latest/download/plugin.zip>
-- 最新 ZIP 校验文件：<https://github.com/erlinerd/zcode-plugin-langfuse/releases/latest/download/plugin.zip.sha256>
+- 最新 Release（资产：`zcode-plugin-langfuse-v<版本>.zip`）：<https://github.com/erlinerd/zcode-plugin-langfuse/releases/latest>
 - Release 页面：<https://github.com/erlinerd/zcode-plugin-langfuse/releases/latest>
 - ZCode 官方插件文档：<https://zcode.z.ai/en/docs/plugin>
 - ZCode 官方插件市场：<https://github.com/zai-org/zcode-plugins>
@@ -124,18 +125,17 @@ npm run package:plugin
 ```
 
 `npm run build` 会把官方 `langfuse` JavaScript SDK 打包进本地 `dist/`。
-`npm run package:plugin` 是默认的分发构建：只执行一次 bundle 构建，完成校验，
-并同时生成发行文件和可同步到插件市场的布局：
+`npm run build` 会构建完整的 `dist/` 输出，结构遵循 ZCode 官方市场布局：
 
 ```text
-artifacts/plugin.zip
-artifacts/plugin.zip.sha256
-artifacts/plugin-layout/plugins/zcode-plugin-langfuse/
-artifacts/plugin-layout/marketplace-entry.json
+dist/marketplace.json
+dist/plugins/zcode-plugin-langfuse/
 ```
 
-ZIP 和 plugin layout 使用同一个生成 bundle。ZIP 包含 ZCode manifest、Hook 声明、
-SDK bundle 和第三方声明。`dist/` 与 `artifacts/` 都是生成目录，不提交到源码仓库。
+`dist/plugins/zcode-plugin-langfuse/` 即可安装的插件：包含 `dist/hooks/entry.mjs`
+运行时、manifest、hooks、包元数据、双语 README、许可证与第三方声明。Release
+工作流负责把该目录压缩为版本化 ZIP；官方目录与本地目录安装直接使用这棵树。
+整个 `dist/` 均为生成目录，不入库。
 
 目录分层：
 
