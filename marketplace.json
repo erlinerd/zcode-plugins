@@ -749,6 +749,7 @@
       "category": "developer-tools",
       "tags": [
         "langfuse",
+        "observability",
         "tracing",
         "telemetry",
         "hooks"

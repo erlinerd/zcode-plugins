@@ -1,9 +1,7 @@
 # Third-party notices
 
-The source runtime can use the following official npm packages when the plugin
-is developed with dependencies installed. The self-contained official cache
-fallback uses the same Langfuse public ingestion API through Node's built-in
-`fetch`, so the published plugin does not require an install step.
+The runtime uses the following npm packages. Versions are pinned by
+`package-lock.json` and their licenses remain with the respective projects:
 
 | Package | Version | License | Source |
 | --- | --- | --- | --- |
