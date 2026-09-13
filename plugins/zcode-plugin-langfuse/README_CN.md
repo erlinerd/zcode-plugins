@@ -62,7 +62,7 @@ API，因此不需要运行时安装步骤。
 
 ## 来源与许可证
 
-源码仓库：<https://github.com/erlinerd/zcode-langfuse-plugin>
+源码仓库：<https://github.com/erlinerd/zcode-plugin-langfuse>
 
 本插件采用 MIT 许可证。确切的 Langfuse SDK、Langfuse Core 和 Mustache 版本及
 MIT 许可证见 [`THIRD_PARTY_NOTICES.md`](./THIRD_PARTY_NOTICES.md)。架构、测试、

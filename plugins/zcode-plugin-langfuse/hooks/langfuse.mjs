@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-const SDK_INTEGRATION = "zcode-langfuse-observability";
+const SDK_INTEGRATION = "zcode-plugin-langfuse";
 const TRACE_NAME = "ZCode Turn";
 
 function isMissingSdk(error) {

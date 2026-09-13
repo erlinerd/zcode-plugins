@@ -534,10 +534,10 @@
       ]
     },
     {
-      "name": "langfuse-observability",
-      "source": "./plugins/langfuse-observability",
+      "name": "zcode-plugin-langfuse",
+      "source": "./plugins/zcode-plugin-langfuse",
       "description": "Fail-open Langfuse tracing for ZCode sessions, prompts, tool calls, and assistant responses.",
-      "version": "0.1.1",
+      "version": "0.2.0",
       "category": "developer-tools",
       "tags": [
         "langfuse",

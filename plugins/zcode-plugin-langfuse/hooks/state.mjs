@@ -107,7 +107,7 @@ function defaultDataDir() {
     "cli",
     "plugins",
     "data",
-    "langfuse-observability",
+    "zcode-plugin-langfuse",
   );
 }
 

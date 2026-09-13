@@ -71,7 +71,7 @@ falls back to the same Langfuse HTTPS ingestion API through Node's built-in
 
 ## Source and license
 
-Source repository: <https://github.com/erlinerd/zcode-langfuse-plugin>
+Source repository: <https://github.com/erlinerd/zcode-plugin-langfuse>
 
 Licensed under MIT. See [`THIRD_PARTY_NOTICES.md`](./THIRD_PARTY_NOTICES.md)
 for the exact Langfuse SDK, Langfuse Core, and Mustache versions and their MIT
