@@ -4,7 +4,7 @@ import { JsonStateStore } from "./state.mjs";
 import { NoopTraceSink, TurnTracker, parsePayload } from "./tracker.mjs";
 
 function diagnostics(enabled, message) {
-  if (enabled) process.stderr.write(`[langfuse-observability] ${message}\n`);
+  if (enabled) process.stderr.write(`[zcode-plugin-langfuse] ${message}\n`);
 }
 
 let raw = "";
