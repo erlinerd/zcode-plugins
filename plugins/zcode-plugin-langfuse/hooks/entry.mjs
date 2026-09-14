@@ -568,7 +568,7 @@ var JsonStateStore = class {
   }
 };
 
-// node_modules/.pnpm/mustache@4.2.0/node_modules/mustache/mustache.mjs
+// node_modules/mustache/mustache.mjs
 var objectToString = Object.prototype.toString;
 var isArray = Array.isArray || function isArrayPolyfill(object) {
   return objectToString.call(object) === "[object Array]";
@@ -1022,7 +1022,7 @@ mustache.Context = Context;
 mustache.Writer = Writer;
 var mustache_default = mustache;
 
-// node_modules/.pnpm/langfuse-core@3.38.20/node_modules/langfuse-core/lib/index.mjs
+// node_modules/langfuse-core/lib/index.mjs
 var SimpleEventEmitter = class {
   constructor() {
     this.events = {};
@@ -3152,7 +3152,7 @@ var LangfuseEventClient = class extends LangfuseObservationClient {
   }
 };
 
-// node_modules/.pnpm/langfuse@3.38.20/node_modules/langfuse/lib/index.mjs
+// node_modules/langfuse/lib/index.mjs
 var cookieStore = {
   getItem(key) {
     try {
