@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 var DEFAULT_BASE_URL = "https://cloud.langfuse.com";
-var DEFAULT_RELEASE = "0.1.1";
+var DEFAULT_RELEASE = "0.2.3";
 var DEFAULT_MAX_CAPTURE_CHARS = 2e4;
 function asText(value) {
   if (value === void 0) return void 0;
